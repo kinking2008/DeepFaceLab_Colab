@@ -77,7 +77,7 @@ def trainerThread (s2c, c2s, e, args, device_args):
                 if is_reached_goal:
                     io.log_info('模型已经有过训练。 你可以使用预览')
                 else:
-                    io.log_info('开始。 目标迭代： %d. 按“Enter”键停止训练并保存模型。按“P”预览下一张' % ( model.get_target_iter()  ) )
+                    io.log_info('开始。 目标迭代： %d. 15分钟自动保存一次' % ( model.get_target_iter()  ) )
             else:
                 io.log_info('开始。 按“Enter”键停止训练并保存模型。按“P”预览下一张')
 
@@ -110,7 +110,7 @@ def trainerThread (s2c, c2s, e, args, device_args):
 
                         loss_history = model.get_loss_history()
                         time_str = time.strftime("[%H:%M:%S]")
-                        if iter_time >= 10:
+                        if iter_time >= 50:
                             loss_string = "{0}[#{1:06d}][{2:.5s}s]".format ( time_str, iter, '{:0.4f}'.format(iter_time) )
                         else:
                             loss_string = "{0}[#{1:06d}][{2:04d}ms]".format ( time_str, iter, int(iter_time*1000) )
