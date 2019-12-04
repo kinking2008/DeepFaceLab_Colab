@@ -30,11 +30,11 @@ def trainerThread (s2c, c2s, e, args, device_args):
             execute_programs = args.get('execute_programs', [])
 
             if not training_data_src_path.exists():
-                io.log_err('Training data src directory does not exist.')
+                io.log_err('训练数据src目录不存在。')
                 break
 
             if not training_data_dst_path.exists():
-                io.log_err('Training data dst directory does not exist.')
+                io.log_err('训练数据dst目录不存在。')
                 break
 
             if not model_path.exists():
@@ -56,7 +56,7 @@ def trainerThread (s2c, c2s, e, args, device_args):
             save_iter =  model.get_iter()
             def model_save():
                 if not debug and not is_reached_goal:
-                    io.log_info ("Saving....", end='\r')
+                    io.log_info ("保存中....", end='\r')
                     model.save()
                     shared_state['after_save'] = True
 
@@ -75,11 +75,11 @@ def trainerThread (s2c, c2s, e, args, device_args):
 
             if model.get_target_iter() != 0:
                 if is_reached_goal:
-                    io.log_info('Model already trained to target iteration. You can use preview.')
+                    io.log_info('模型已经有过训练。 你可以使用预览')
                 else:
-                    io.log_info('Starting. Target iteration: %d. Press "Enter" to stop training and save model.' % ( model.get_target_iter()  ) )
+                    io.log_info('开始。 目标迭代： %d. 按“Enter”键停止训练并保存模型。按“P”预览下一张' % ( model.get_target_iter()  ) )
             else:
-                io.log_info('Starting. Press "Enter" to stop training and save model.')
+                io.log_info('开始。 按“Enter”键停止训练并保存模型。按“P”预览下一张')
 
             last_save_time = time.time()
 
@@ -103,7 +103,7 @@ def trainerThread (s2c, c2s, e, args, device_args):
                             try:
                                 exec(prog)
                             except Exception as e:
-                                print("Unable to execute program: %s" % (prog) )
+                                print("无法执行程序: %s" % (prog) )
 
                     if not is_reached_goal:
                         iter, iter_time = model.train_one_iter()
@@ -137,10 +137,10 @@ def trainerThread (s2c, c2s, e, args, device_args):
                                 io.log_info (loss_string, end='\r')
 
                         if model.get_target_iter() != 0 and model.is_reached_iter_goal():
-                            io.log_info ('Reached target iteration.')
+                            io.log_info ("达到目标迭代。")
                             model_save()
                             is_reached_goal = True
-                            io.log_info ('You can use preview now.')
+                            io.log_info ('你现在可以使用预览了。')
 
                 if not is_reached_goal and (time.time() - last_save_time) >= save_interval_min*60:
                     model_save()
@@ -184,7 +184,7 @@ def trainerThread (s2c, c2s, e, args, device_args):
 
 
 def main(args, device_args):
-    io.log_info ("Running trainer.\r\n")
+    io.log_info ("进行训练.\r\n")
 
     no_preview = args.get('no_preview', False)
 

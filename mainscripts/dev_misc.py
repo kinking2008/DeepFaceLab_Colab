@@ -1,4 +1,4 @@
-import multiprocessing
+﻿import multiprocessing
 import shutil
 from pathlib import Path
 
@@ -22,7 +22,7 @@ def extract_vggface2_dataset(input_dir, device_args={} ):
 
     input_path = Path(input_dir)
     if not input_path.exists():
-        raise ValueError('Input directory not found. Please ensure it exists.')
+        raise ValueError('找不到输入目录。 请确保它存在。')
     
     output_path = input_path.parent / (input_path.name + '_out')
     
@@ -136,7 +136,7 @@ class CelebAMASKHQSubprocessor(Subprocessor):
 
     #override
     def on_clients_initialized(self):
-        io.progress_bar ("Processing", len (self.image_paths))
+        io.progress_bar ("处理", len (self.image_paths))
 
     #override
     def on_clients_finalized(self):
@@ -177,7 +177,7 @@ def apply_celebamaskhq(input_dir ):
     return
     
     paths_to_extract = []
-    for filename in io.progress_bar_generator(Path_utils.get_image_paths(img_path), desc="Processing"):
+    for filename in io.progress_bar_generator(Path_utils.get_image_paths(img_path), desc="处理"):
         filepath = Path(filename)
         if filepath.suffix == '.png':
             dflimg = DFLPNG.load( str(filepath) )

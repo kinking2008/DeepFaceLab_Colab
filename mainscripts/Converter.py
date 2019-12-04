@@ -71,7 +71,7 @@ class ConvertSubprocessor(Subprocessor):
 
         #override
         def on_initialize(self, client_dict):
-            self.log_info ('Running on %s.' % (client_dict['device_name']) )
+            self.log_info ('运行模式： %s.' % (client_dict['device_name']) )
             self.device_idx  = client_dict['device_idx']
             self.device_name = client_dict['device_name']
             self.predictor_func = client_dict['predictor_func']
@@ -169,7 +169,7 @@ class ConvertSubprocessor(Subprocessor):
             need_return_image = pf.need_return_image
 
             if len(landmarks_list) == 0:
-                self.log_info ( 'no faces found for %s, copying without faces' % (filename_path.name) )
+                self.log_info ( '没有找到%s的面孔，没有面部复制' % (filename_path.name) )
 
                 if filename_path.suffix == '.png':
                     shutil.copy (filename, output_filename )
@@ -194,7 +194,7 @@ class ConvertSubprocessor(Subprocessor):
                         if 'MemoryError' in e_str:
                             raise Subprocessor.SilenceException
                         else:
-                            raise Exception( 'Error while converting file [%s]: %s' % (filename, e_str) )
+                            raise Exception( '转换文件时出错 [%s]: %s' % (filename, e_str) )
 
                 elif cfg.type == ConverterConfig.TYPE_FACE_AVATAR:
                     final_img = ConvertFaceAvatar (self.predictor_func, self.predictor_input_shape,
@@ -251,7 +251,7 @@ class ConvertSubprocessor(Subprocessor):
         session_data = None
         if self.is_interactive and self.converter_session_filepath.exists():
 
-            if io.input_bool ("Use saved session? (y/n skip:y) : ", True):
+            if io.input_bool ("使用保存的会话? (y/n 跳过:y) : ", True):
                 try:
                     with open( str(self.converter_session_filepath), "rb") as f:
                         session_data = pickle.loads(f.read())
@@ -346,7 +346,7 @@ class ConvertSubprocessor(Subprocessor):
 
     #overridable optional
     def on_clients_initialized(self):
-        io.progress_bar ("Converting", len (self.frames_idxs), initial=len(self.frames_done_idxs) )
+        io.progress_bar ("转换", len (self.frames_idxs), initial=len(self.frames_done_idxs) )
 
         self.process_remain_frames = not self.is_interactive
         self.is_interactive_quitting = not self.is_interactive
@@ -384,7 +384,7 @@ class ConvertSubprocessor(Subprocessor):
 
             io.log_info ("Session is saved to " + '/'.join (self.converter_session_filepath.parts[-2:]) )
 
-    cfg_change_keys = ['`','1', '2', '3', '4', '5', '6', '7', '8', '9',
+    cfg_change_keys = ['`','1', '2', '3', '4', '5', '6', '7', '8', 
                                  'q', 'a', 'w', 's', 'e', 'd', 'r', 'f', 'y','h','u','j','i','k','o','l','p', ';',':',#'t', 'g',
                                  'z', 'x', 'c', 'v', 'b','n'   ]
     #override
@@ -447,7 +447,7 @@ class ConvertSubprocessor(Subprocessor):
                             if cfg.type == ConverterConfig.TYPE_MASKED:
                                 if chr_key == '`':
                                     cfg.set_mode(0)
-                                elif key >= ord('1') and key <= ord('9'):
+                                elif key >= ord('1') and key <= ord('8'):
                                     cfg.set_mode( key - ord('0') )
                                 elif chr_key == 'q':
                                     cfg.add_hist_match_threshold(1 if not shift_pressed else 5)
@@ -625,7 +625,7 @@ class ConvertSubprocessor(Subprocessor):
         return 0
 
 def main (args, device_args):
-    io.log_info ("Running converter.\r\n")
+    io.log_info ("进行转换.\r\n")
 
     training_data_src_dir = args.get('training_data_src_dir', None)
     training_data_src_path = Path(training_data_src_dir) if training_data_src_dir is not None else None
@@ -638,17 +638,17 @@ def main (args, device_args):
         model_path = Path(args['model_dir'])
 
         if not input_path.exists():
-            io.log_err('Input directory not found. Please ensure it exists.')
+            io.log_err('找不到输入目录。 请确保它存在。')
             return
 
         if not output_path.exists():
             output_path.mkdir(parents=True, exist_ok=True)
 
         if not model_path.exists():
-            io.log_err('Model directory not found. Please ensure it exists.')
+            io.log_err('未找到模型目录。 请确保它存在。')
             return
 
-        is_interactive = io.input_bool ("Use interactive converter? (y/n skip:y) : ", True) if not io.is_colab() else False
+        is_interactive = io.input_bool ("使用互动转换器？(y/n 跳过:y) : ", True) if not io.is_colab() else False
 
         import models
         model = models.import_model( args['model_name'])(model_path, device_args=device_args, training_data_src_path=training_data_src_path)
@@ -662,12 +662,12 @@ def main (args, device_args):
 
         if cfg.type == ConverterConfig.TYPE_MASKED:
             if aligned_dir is None:
-                io.log_err('Aligned directory not found. Please ensure it exists.')
+                io.log_err('找不到Aligned目录，请确定他存在')
                 return
 
             aligned_path = Path(aligned_dir)
             if not aligned_path.exists():
-                io.log_err('Aligned directory not found. Please ensure it exists.')
+                io.log_err('找不到Aligned目录，请确定他存在')
                 return
 
             alignments = {}
@@ -684,10 +684,16 @@ def main (args, device_args):
                     dflimg = None
 
                 if dflimg is None:
-                    io.log_err ("%s is not a dfl image file" % (filepath.name) )
+                    io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
                     continue
 
-                source_filename_stem = Path( dflimg.get_source_filename() ).stem
+                source_filename = dflimg.get_source_filename()
+                if source_filename is None or source_filename == "_":
+                    continue
+                
+                source_filename = Path(source_filename)
+                source_filename_stem = source_filename.stem
+                
                 if source_filename_stem not in alignments.keys():
                     alignments[ source_filename_stem ] = []
 
@@ -697,12 +703,12 @@ def main (args, device_args):
                     multiple_faces_detected = True
 
             if multiple_faces_detected:
-                io.log_info ("Warning: multiple faces detected. Strongly recommended to process them separately.")
+                io.log_info ("警告：检测到多个面孔。强烈建议单独处理它们。")
 
             frames = [ ConvertSubprocessor.Frame( frame_info=FrameInfo(filename=p, landmarks_list=alignments.get(Path(p).stem, None))) for p in input_path_image_paths ]
 
             if multiple_faces_detected:
-                io.log_info ("Warning: multiple faces detected. Motion blur will not be used.")
+                io.log_info ("警告：检测到多个脸部。不会使用运动模糊。")
             else:
                 s = 256
                 local_pts = [ (s//2-1, s//2-1), (s//2-1,0) ] #center+up
@@ -748,7 +754,7 @@ def main (args, device_args):
                     dflimg = None
 
                 if dflimg is None:
-                    io.log_err ("%s is not a dfl image file" % (filepath.name) )
+                    io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
                     continue
                 filesdata += [ ( FrameInfo(filename=str(filepath), landmarks_list=[dflimg.get_landmarks()] ), dflimg.get_source_filename() ) ]
 

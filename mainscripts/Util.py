@@ -18,7 +18,7 @@ def remove_ie_polys_file (filepath):
         return
 
     if dflimg is None:
-        io.log_err ("%s is not a dfl image file" % (filepath.name) )
+        io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
         return
 
     dflimg.remove_ie_polys()
@@ -45,7 +45,7 @@ def remove_fanseg_file (filepath):
         return
 
     if dflimg is None:
-        io.log_err ("%s is not a dfl image file" % (filepath.name) )
+        io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
         return
 
     dflimg.remove_fanseg_mask()
@@ -55,7 +55,7 @@ def remove_fanseg_file (filepath):
 def remove_fanseg_folder(input_path):
     input_path = Path(input_path)
 
-    io.log_info ("Removing fanseg mask...\r\n")
+    io.log_info ("删除 fanseg 面具...\r\n")
 
     for filepath in io.progress_bar_generator( Path_utils.get_image_paths(input_path), "Removing"):
         filepath = Path(filepath)
@@ -69,7 +69,7 @@ def convert_png_to_jpg_file (filepath):
 
     dflpng = DFLPNG.load (str(filepath) )
     if dflpng is None:
-        io.log_err ("%s is not a dfl image file" % (filepath.name) )
+        io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
         return
 
     dfl_dict = dflpng.getDFLDictData()
@@ -91,16 +91,16 @@ def convert_png_to_jpg_file (filepath):
 def convert_png_to_jpg_folder (input_path):
     input_path = Path(input_path)
 
-    io.log_info ("Converting PNG to JPG...\r\n")
+    io.log_info ("将PNG转换为JPG ...\r\n")
 
-    for filepath in io.progress_bar_generator( Path_utils.get_image_paths(input_path), "Converting"):
+    for filepath in io.progress_bar_generator( Path_utils.get_image_paths(input_path), "转换"):
         filepath = Path(filepath)
         convert_png_to_jpg_file(filepath)
 
 def add_landmarks_debug_images(input_path):
-    io.log_info ("Adding landmarks debug images...")
+    io.log_info ("添加脸部坐标调试图像...")
 
-    for filepath in io.progress_bar_generator( Path_utils.get_image_paths(input_path), "Processing"):
+    for filepath in io.progress_bar_generator( Path_utils.get_image_paths(input_path), "处理"):
         filepath = Path(filepath)
 
         img = cv2_imread(str(filepath))
@@ -113,7 +113,7 @@ def add_landmarks_debug_images(input_path):
             dflimg = None
 
         if dflimg is None:
-            io.log_err ("%s is not a dfl image file" % (filepath.name) )
+            io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
             continue
 
         if img is not None:
@@ -124,10 +124,10 @@ def add_landmarks_debug_images(input_path):
             cv2_imwrite(output_file, img, [int(cv2.IMWRITE_JPEG_QUALITY), 50] )
 
 def recover_original_aligned_filename(input_path):
-    io.log_info ("Recovering original aligned filename...")
+    io.log_info ("恢复原始对齐的文件名...")
 
     files = []
-    for filepath in io.progress_bar_generator( Path_utils.get_image_paths(input_path), "Processing"):
+    for filepath in io.progress_bar_generator( Path_utils.get_image_paths(input_path), "处理"):
         filepath = Path(filepath)
 
         if filepath.suffix == '.png':
@@ -138,13 +138,13 @@ def recover_original_aligned_filename(input_path):
             dflimg = None
 
         if dflimg is None:
-            io.log_err ("%s is not a dfl image file" % (filepath.name) )
+            io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
             continue
 
         files += [ [filepath, None, dflimg.get_source_filename(), False] ]
 
     files_len = len(files)
-    for i in io.progress_bar_generator( range(files_len), "Sorting" ):
+    for i in io.progress_bar_generator( range(files_len), "排序" ):
         fp, _, sf, converted = files[i]
 
         if converted:
@@ -166,18 +166,18 @@ def recover_original_aligned_filename(input_path):
                 files[j][3] = True
                 c += 1
 
-    for file in io.progress_bar_generator( files, "Renaming", leave=False ):
+    for file in io.progress_bar_generator( files, "重命名", leave=False ):
         fs, _, _, _ = file
         dst = fs.parent / ( fs.stem + '_tmp' + fs.suffix )
         try:
             fs.rename (dst)
         except:
-            io.log_err ('fail to rename %s' % (fs.name) )
+            io.log_err ('未能重命名 %s' % (fs.name) )
 
-    for file in io.progress_bar_generator( files, "Renaming" ):
+    for file in io.progress_bar_generator( files, "重命名" ):
         fs, fd, _, _ = file
         fs = fs.parent / ( fs.stem + '_tmp' + fs.suffix )
         try:
             fs.rename (fd)
         except:
-            io.log_err ('fail to rename %s' % (fs.name) )
+            io.log_err ('未能重命名 %s' % (fs.name) )

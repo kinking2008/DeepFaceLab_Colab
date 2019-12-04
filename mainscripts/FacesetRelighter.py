@@ -1,4 +1,4 @@
-import traceback
+﻿import traceback
 from pathlib import Path
 
 import imagelib
@@ -20,7 +20,7 @@ class RelightEditor:
         self.current_img_shape = None
         self.pick_new_face()
 
-        self.alt_azi_ar = [ [0,0] ]
+        self.alt_azi_ar = [ [0,0,1.0] ]
         self.alt_azi_cur = 0
 
         self.mouse_x = self.mouse_y = 9999
@@ -43,21 +43,22 @@ class RelightEditor:
         return result
 
     def make_screen(self):
-        alt,azi=self.alt_azi_ar[self.alt_azi_cur]
+        alt,azi,inten=self.alt_azi_ar[self.alt_azi_cur]
 
-        img = self.dpr.relight (self.current_img, alt, azi, self.lighten)
+        img = self.dpr.relight (self.current_img, alt, azi, inten, self.lighten)
 
         h,w,c = img.shape
 
         lines = ['Pick light directions for whole faceset.',
                  '[q]-new test face',
                  '[w][e]-navigate',
+                 '[a][s]-intensity',
                  '[r]-new [t]-delete [enter]-process',
                  '']
 
-        for i, (alt,azi) in enumerate(self.alt_azi_ar):
+        for i, (alt,azi,inten) in enumerate(self.alt_azi_ar):
             s = '>:' if self.alt_azi_cur == i else ' :'
-            s += f'alt=[{ int(alt):03}] azi=[{ int(azi):03}]'
+            s += f'alt=[{ int(alt):03}] azi=[{ int(azi):03}] int=[{inten:01.1f}]'
             lines += [ s ]
 
         lines_count = len(lines)
@@ -109,10 +110,12 @@ class RelightEditor:
 
                 if is_angle_editing:
                     h,w,c = self.current_img_shape
-
-                    self.alt_azi_ar[self.alt_azi_cur] = \
-                        [np.clip ( ( 0.5-y/w )*2.0, -1, 1)*90,    \
-                         np.clip ( (x / h - 0.5)*2.0, -1, 1)*90 ]
+                    
+                    alt,azi,inten = self.alt_azi_ar[self.alt_azi_cur]
+                    alt = np.clip ( ( 0.5-y/w )*2.0,   -1, 1)*90
+                    azi = np.clip ( (x / h - 0.5)*2.0, -1, 1)*90
+                    self.alt_azi_ar[self.alt_azi_cur] = (alt,azi,inten)
+                        
 
                     self.set_screen_changed()
 
@@ -130,7 +133,7 @@ class RelightEditor:
                     self.set_screen_changed()
                 elif chr_key == 'r':
                     #add direction
-                    self.alt_azi_ar += [ [0,0] ]
+                    self.alt_azi_ar += [ [0,0,1.0] ]
                     self.alt_azi_cur +=1
                     self.set_screen_changed()
                 elif chr_key == 't':
@@ -138,6 +141,16 @@ class RelightEditor:
                         self.alt_azi_ar.pop(self.alt_azi_cur)
                         self.alt_azi_cur = np.clip (self.alt_azi_cur, 0, len(self.alt_azi_ar)-1)
                         self.set_screen_changed()
+                elif chr_key == 'a':
+                    alt,azi,inten = self.alt_azi_ar[self.alt_azi_cur]
+                    inten = np.clip ( inten-0.1, 0.0, 1.0)
+                    self.alt_azi_ar[self.alt_azi_cur] = (alt,azi,inten)
+                    self.set_screen_changed()
+                elif chr_key == 's':
+                    alt,azi,inten = self.alt_azi_ar[self.alt_azi_cur]
+                    inten = np.clip ( inten+0.1, 0.0, 1.0)
+                    self.alt_azi_ar[self.alt_azi_cur] = (alt,azi,inten)
+                    self.set_screen_changed()
                 elif key == 27 or chr_key == '\r' or chr_key == '\n': #esc
                     is_exit = True
 
@@ -154,21 +167,21 @@ class RelightEditor:
 
 def relight(input_dir, lighten=None, random_one=None):
     if lighten is None:
-        lighten = io.input_bool ("Lighten the faces? ( y/n default:n ?:help ) : ", False, help_message="Lighten the faces instead of shadow. May produce artifacts." )
+        lighten = io.input_bool ("增加面部光源? ( y/n 默认:n 帮助:? ) : ", False, help_message="照亮面部而不是阴影。可能会产生伪影." )
 
     if io.is_colab():
-        io.log_info("In colab version you cannot choose light directions manually.")
+        io.log_info("在colab版本中，您不能手动选择灯光方向.")
         manual = False
     else:
-        manual = io.input_bool ("Choose light directions manually? ( y/n default:y ) : ", True)
+        manual = io.input_bool ("手动选择灯光方向? ( y/n 默认:y ) : ", True)
 
     if not manual:
         if random_one is None:
-            random_one = io.input_bool ("Relight the faces only with one random direction? ( y/n default:y ?:help) : ", True, help_message="Otherwise faceset will be relighted with predefined 7 light directions.")
+            random_one = io.input_bool ("随机一个方向和随机强度来照亮面部? ( y/n 默认:y 帮助:?) : ", True, help_message="否则，脸部将以预定义的7个光方向重新照明，但强度随机.")
 
     image_paths = [Path(x) for x in Path_utils.get_image_paths(input_dir)]
     filtered_image_paths = []
-    for filepath in io.progress_bar_generator(image_paths, "Collecting fileinfo"):
+    for filepath in io.progress_bar_generator(image_paths, "收集文件信息"):
         try:
             if filepath.suffix == '.png':
                 dflimg = DFLPNG.load( str(filepath) )
@@ -178,7 +191,7 @@ def relight(input_dir, lighten=None, random_one=None):
                 dflimg = None
 
             if dflimg is None:
-                io.log_err ("%s is not a dfl image file" % (filepath.name) )
+                io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
             else:
                 if not dflimg.get_relighted():
                     filtered_image_paths += [filepath]
@@ -187,18 +200,15 @@ def relight(input_dir, lighten=None, random_one=None):
     image_paths = filtered_image_paths
 
     if len(image_paths) == 0:
-        io.log_info("No files to process.")
+        io.log_info("没有文件要处理.")
         return
 
     dpr = DeepPortraitRelighting()
 
     if manual:
         alt_azi_ar = RelightEditor(image_paths, dpr, lighten).run()
-    else:
-        if not random_one:
-            alt_azi_ar = [(60,0), (60,60), (0,60), (-60,60), (-60,0), (-60,-60), (0,-60), (60,-60)]
-
-    for filepath in io.progress_bar_generator(image_paths, "Relighting"):
+        
+    for filepath in io.progress_bar_generator(image_paths, "二次照明"):
         try:
             if filepath.suffix == '.png':
                 dflimg = DFLPNG.load( str(filepath) )
@@ -208,7 +218,7 @@ def relight(input_dir, lighten=None, random_one=None):
                 dflimg = None
 
             if dflimg is None:
-                io.log_err ("%s is not a dfl image file" % (filepath.name) )
+                io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
                 continue
             else:
                 if dflimg.get_relighted():
@@ -218,9 +228,14 @@ def relight(input_dir, lighten=None, random_one=None):
                 if random_one:
                     alt = np.random.randint(-90,91)
                     azi = np.random.randint(-90,91)
-                    relighted_imgs = [dpr.relight(img,alt=alt,azi=azi,lighten=lighten)]
+                    inten = np.random.random()*0.3+0.3
+                    relighted_imgs = [dpr.relight(img,alt=alt,azi=azi,intensity=inten,lighten=lighten)]
                 else:
-                    relighted_imgs = [dpr.relight(img,alt=alt,azi=azi,lighten=lighten) for (alt,azi) in alt_azi_ar ]
+                    if not manual and not random_one:
+                        inten = np.random.random()*0.3+0.3
+                        alt_azi_ar = [(60,0,inten), (60,60,inten), (0,60,inten), (-60,60,inten), (-60,0,inten), (-60,-60,inten), (0,-60,inten), (60,-60,inten)]
+                    
+                    relighted_imgs = [dpr.relight(img,alt=alt,azi=azi,intensity=inten,lighten=lighten) for (alt,azi,inten) in alt_azi_ar ]
 
                 i = 0
                 for i,relighted_img in enumerate(relighted_imgs):
@@ -235,7 +250,9 @@ def relight(input_dir, lighten=None, random_one=None):
                         i += 1
 
                     cv2_imwrite (relighted_filepath, relighted_img )
-                    dflimg.embed_and_set (relighted_filepath, source_filename="_", relighted=True )
+                    
+                    dflimg.remove_source_filename()
+                    dflimg.embed_and_set (relighted_filepath, relighted=True )
         except:
             io.log_err (f"Exception occured while processing file {filepath.name}. Error: {traceback.format_exc()}")
 
@@ -244,7 +261,7 @@ def delete_relighted(input_dir):
     image_paths = [Path(x) for x in Path_utils.get_image_paths(input_path)]
 
     files_to_delete = []
-    for filepath in io.progress_bar_generator(image_paths, "Loading"):
+    for filepath in io.progress_bar_generator(image_paths, "加载"):
         if filepath.suffix == '.png':
             dflimg = DFLPNG.load( str(filepath) )
         elif filepath.suffix == '.jpg':
@@ -253,11 +270,11 @@ def delete_relighted(input_dir):
             dflimg = None
 
         if dflimg is None:
-            io.log_err ("%s is not a dfl image file" % (filepath.name) )
+            io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
             continue
         else:
             if dflimg.get_relighted():
                 files_to_delete += [filepath]
 
-    for file in io.progress_bar_generator(files_to_delete, "Deleting"):
+    for file in io.progress_bar_generator(files_to_delete, "正在删除"):
         file.unlink()

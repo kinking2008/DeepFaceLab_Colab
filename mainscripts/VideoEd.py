@@ -1,4 +1,4 @@
-import subprocess
+﻿import subprocess
 import numpy as np
 import ffmpeg
 from pathlib import Path
@@ -20,14 +20,14 @@ def extract_video(input_file, output_dir, output_ext=None, fps=None):
             input_file_path = None
 
     if input_file_path is None:
-        io.log_err("input_file not found.")
+        io.log_err("输入目录没有文件")
         return
 
     if fps is None:
-        fps = io.input_int ("Enter FPS ( ?:help skip:fullfps ) : ", 0, help_message="How many frames of every second of the video will be extracted.")
+        fps = io.input_int ("提取每秒视频 FPS ( 帮助:? 跳过:按原视频FPS ) : ", 0, help_message="提取每秒视频的帧数。")
 
     if output_ext is None:
-        output_ext = io.input_str ("Output image format? ( jpg png ?:help skip:png ) : ", "png", ["png","jpg"], help_message="png is lossless, but extraction is x10 slower for HDD, requires x10 more disk space than jpg.")
+        output_ext = io.input_str ("输出图像格式? ( jpg png 帮助:? 跳过:png ) : ", "png", ["png","jpg"], help_message="png格式是无损的，但对于HDD来说，提取速度要慢10倍，需要比jpg格式多10倍的磁盘空间。")
 
     for filename in Path_utils.get_image_paths (output_path, ['.'+output_ext]):
         Path(filename).unlink()
@@ -46,27 +46,27 @@ def extract_video(input_file, output_dir, output_ext=None, fps=None):
     try:
         job = job.run()
     except:
-        io.log_err ("ffmpeg fail, job commandline:" + str(job.compile()) )
+        io.log_err ("ffmpeg失败，工作命令行:" + str(job.compile()) )
 
 def cut_video ( input_file, from_time=None, to_time=None, audio_track_id=None, bitrate=None):
     input_file_path = Path(input_file)
     if input_file_path is None:
-        io.log_err("input_file not found.")
+        io.log_err("输入目录没有文件")
         return
 
     output_file_path = input_file_path.parent / (input_file_path.stem + "_cut" + input_file_path.suffix)
 
     if from_time is None:
-        from_time = io.input_str ("From time (skip: 00:00:00.000) : ", "00:00:00.000")
+        from_time = io.input_str ("开始时间 (跳过: 00:00:00.000) : ", "00:00:00.000")
 
     if to_time is None:
-        to_time = io.input_str ("To time (skip: 00:00:00.000) : ", "00:00:00.000")
+        to_time = io.input_str ("结束时间 (跳过: 00:00:00.000) : ", "00:00:00.000")
 
     if audio_track_id is None:
-        audio_track_id = io.input_int ("Specify audio track id. ( skip:0 ) : ", 0)
+        audio_track_id = io.input_int ("指定音轨ID。( 跳过:0 ) : ", 0)
 
     if bitrate is None:
-        bitrate = max (1, io.input_int ("Bitrate of output file in MB/s ? (default:25) : ", 25) )
+        bitrate = max (1, io.input_int ("输出文件的比特率每秒多少MB? (默认:25) : ", 25) )
 
     kwargs = {"c:v": "libx264",
               "b:v": "%dM" %(bitrate),
@@ -83,7 +83,7 @@ def cut_video ( input_file, from_time=None, to_time=None, audio_track_id=None, b
     try:
         job = job.run()
     except:
-        io.log_err ("ffmpeg fail, job commandline:" + str(job.compile()) )
+        io.log_err ("ffmpeg失败，工作命令行:" + str(job.compile()) )
 
 def denoise_image_sequence( input_dir, ext=None, factor=None ):
     input_path = Path(input_dir)
@@ -93,10 +93,10 @@ def denoise_image_sequence( input_dir, ext=None, factor=None ):
         return
 
     if ext is None:
-        ext = io.input_str ("Input image format (extension)? ( default:png ) : ", "png")
+        ext = io.input_str ("输入图像格式（扩展名：jpg/png）? ( 默认:png ) : ", "png")
 
     if factor is None:
-        factor = np.clip ( io.input_int ("Denoise factor? (1-20 default:5) : ", 5), 1, 20 )
+        factor = np.clip ( io.input_int ("降噪因子? (1-20 默认:5) : ", 5), 1, 20 )
 
     kwargs = {}
     if ext == 'jpg':
@@ -111,7 +111,7 @@ def denoise_image_sequence( input_dir, ext=None, factor=None ):
     try:
         job = job.run()
     except:
-        io.log_err ("ffmpeg fail, job commandline:" + str(job.compile()) )
+        io.log_err ("ffmpeg失败，工作命令行:" + str(job.compile()) )
 
 def video_from_sequence( input_dir, output_file, reference_file=None, ext=None, fps=None, bitrate=None, lossless=None ):
     input_path = Path(input_dir)
@@ -129,10 +129,10 @@ def video_from_sequence( input_dir, output_file, reference_file=None, ext=None, 
     out_ext = output_file_path.suffix
 
     if ext is None:
-        ext = io.input_str ("Input image format (extension)? ( default:png ) : ", "png")
+        ext = io.input_str ("输入图像格式（扩展名：jpg/png）? ( 默认:png ) : ", "png")
 
     if lossless is None:
-        lossless = io.input_bool ("Use lossless codec ? ( default:no ) : ", False)
+        lossless = io.input_bool ("使用无损编解码器? ( 默认:no ) : ", False)
 
     video_id = None
     audio_id = None
@@ -145,7 +145,7 @@ def video_from_sequence( input_dir, output_file, reference_file=None, ext=None, 
                 reference_file_path = None
 
         if reference_file_path is None:
-            io.log_err("reference_file not found.")
+            io.log_err("参照目录没有文件.")
             return
 
         #probing reference file
@@ -166,10 +166,10 @@ def video_from_sequence( input_dir, output_file, reference_file=None, ext=None, 
 
     if fps is None:
         #if fps not specified and not overwritten by reference-file
-        fps = max (1, io.input_int ("FPS ? (default:25) : ", 25) )
+        fps = max (1, io.input_int ("FPS ? (默认:25) : ", 25) )
 
     if not lossless and bitrate is None:
-        bitrate = max (1, io.input_int ("Bitrate of output file in MB/s ? (default:16) : ", 16) )
+        bitrate = max (1, io.input_int ("输出文件的比特率每秒多少MB? (默认:16) : ", 16) )
 
     input_image_paths = Path_utils.get_image_paths(input_path)
 
@@ -211,4 +211,4 @@ def video_from_sequence( input_dir, output_file, reference_file=None, ext=None, 
         job_run.stdin.close()
         job_run.wait()
     except:
-        io.log_err ("ffmpeg fail, job commandline:" + str(job.compile()) )
+        io.log_err ("ffmpeg失败，工作命令行:" + str(job.compile()) )

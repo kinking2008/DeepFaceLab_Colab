@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import time
 import traceback
@@ -27,7 +27,7 @@ class MaskEditor:
 
         if h != w and w != 256:
             #to support any square res, scale img,mask and ie_polys to 256, then scale ie_polys back on .get_ie_polys()
-            raise Exception ("MaskEditor does not support image size != 256x256")
+            raise Exception ("MaskEditor只支持图像尺寸：256x256")
 
         ph, pw = h // 4, w // 4 #pad wh
 
@@ -334,7 +334,7 @@ def mask_editor_main(input_dir, confirmed_dir=None, skipped_dir=None, no_default
     skipped_path = Path(skipped_dir)
 
     if not input_path.exists():
-        raise ValueError('Input directory not found. Please ensure it exists.')
+        raise ValueError('找不到输入目录。 请确保它存在。')
 
     if not confirmed_path.exists():
         confirmed_path.mkdir(parents=True)
@@ -343,7 +343,7 @@ def mask_editor_main(input_dir, confirmed_dir=None, skipped_dir=None, no_default
         skipped_path.mkdir(parents=True)
         
     if not no_default_mask:
-        eyebrows_expand_mod = np.clip ( io.input_int ("Default eyebrows expand modifier? (0..400, skip:100) : ", 100), 0, 400 ) / 100.0
+        eyebrows_expand_mod = np.clip ( io.input_int ("默认眉毛扩大修改? (0..400,跳过:100) : ", 100), 0, 400 ) / 100.0
     else:
         eyebrows_expand_mod = None
 
@@ -404,7 +404,7 @@ def mask_editor_main(input_dir, confirmed_dir=None, skipped_dir=None, no_default
                 dflimg = None
 
             if dflimg is None:
-                io.log_err ("%s is not a dfl image file" % (filepath.name) )
+                io.log_err ("%s 不是dfl图像文件" % (filepath.name) )
                 continue
             else:
                 lmrks = dflimg.get_landmarks()
