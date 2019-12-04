@@ -75,7 +75,7 @@ class ModelBase(object):
                 self.loss_history = model_data.get('loss_history', [])
                 self.sample_for_preview = model_data.get('sample_for_preview', None)
 
-        ask_override = self.is_training_mode and self.iter != 0 and io.input_in_time ("2秒内按enter键更改模型中设置。", 5 if io.is_colab() else 2 )
+        ask_override = self.is_training_mode and self.iter != 0 and io.input_in_time ("8秒内按enter键更改模型中设置。", 5 if io.is_colab() else 8 )
 
         yn_str = {True:'y',False:'n'}
 
