@@ -1,4 +1,4 @@
-from functools import partial
+﻿from functools import partial
 
 import cv2
 import numpy as np
@@ -25,19 +25,19 @@ class FUNITModel(ModelBase):
         
         default_resolution = 96
         if is_first_run:
-            self.options['resolution'] = io.input_int(f"Resolution ( 96,128,224 ?:help skip:{default_resolution}) : ", default_resolution, [128,224])
+            self.options['resolution'] = io.input_int(f"分辨率 ( 96,128,224 帮助:? 跳过:{default_resolution}) : ", default_resolution, [128,224])
         else:
             self.options['resolution'] = self.options.get('resolution', default_resolution)
 
         default_face_type = 'mf'
         if is_first_run:
-            self.options['face_type'] = io.input_str (f"Half or Full face? (h/mf/f, ?:help skip:{default_face_type}) : ", default_face_type, ['h','mf','f'], help_message="").lower()
+            self.options['face_type'] = io.input_str (f"半脸（h）,中脸（mf）,全脸（f）? (帮助:? 跳过:{default_face_type}) : ", default_face_type, ['h','mf','f'], help_message="").lower()
         else:
             self.options['face_type'] = self.options.get('face_type', default_face_type)
             
         if (is_first_run or ask_override) and 'tensorflow' in self.device_config.backend:
             def_optimizer_mode = self.options.get('optimizer_mode', 1)
-            self.options['optimizer_mode'] = io.input_int ("Optimizer mode? ( 1,2,3 ?:help skip:%d) : " % (def_optimizer_mode), def_optimizer_mode, help_message="1 - no changes. 2 - allows you to train x2 bigger network consuming RAM. 3 - allows you to train x3 bigger network consuming huge amount of RAM and slower, depends on CPU power.")
+            self.options['optimizer_mode'] = io.input_int ("优化模式? ( 1,2,3 帮助:? 跳过:%d) : " % (def_optimizer_mode), def_optimizer_mode, help_message="1 - 没有变化。2 - 允许您训练x2更大的网络消耗内存。3 - 允许你训练x3更大的网络消耗大量的内存和更慢，取决于CPU的功率。")
         else:
             self.options['optimizer_mode'] = self.options.get('optimizer_mode', 1)
             

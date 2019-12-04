@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 
 from nnlib import nnlib
 from models import ModelBase
@@ -25,13 +25,13 @@ class Model(ModelBase):
 
         default_face_type = 'f'
         if is_first_run:
-            self.options['face_type'] = io.input_str ("Half or Full face? (h/f, ?:help skip:f) : ", default_face_type, ['h','f'], help_message="Half face has better resolution, but covers less area of cheeks.").lower()
+            self.options['face_type'] = io.input_str ("半脸（h）全脸（f）? (帮助:? 跳过:f) : ", default_face_type, ['h','f'], help_message="半脸有更好的分辨率，但覆盖的脸颊面积较小。").lower()
         else:
             self.options['face_type'] = self.options.get('face_type', default_face_type)
 
         def_train_bgr = self.options.get('train_bgr', True)
         if is_first_run or ask_override:
-            self.options['train_bgr'] = io.input_bool ("Train bgr? (y/n, ?:help skip: %s) : " % (yn_str[def_train_bgr]), def_train_bgr)
+            self.options['train_bgr'] = io.input_bool ("训练bgr? (y/n, 帮助:? 跳过: %s ) : " % (yn_str[def_train_bgr]), def_train_bgr)
         else:
             self.options['train_bgr'] = self.options.get('train_bgr', def_train_bgr)
 

@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 
 from nnlib import nnlib
 from models import ModelBase
@@ -12,7 +12,7 @@ class Model(ModelBase):
     def onInitializeOptions(self, is_first_run, ask_override):
         if is_first_run or ask_override:
             def_pixel_loss = self.options.get('pixel_loss', False)
-            self.options['pixel_loss'] = io.input_bool ("Use pixel loss? (y/n, ?:help skip: n/default ) : ", def_pixel_loss, help_message="Pixel loss may help to enhance fine details and stabilize face color. Use it only if quality does not improve over time.")
+            self.options['pixel_loss'] = io.input_bool ("使用像素丢失? (y/n, 帮助:? 跳过: 默认/n  ) : ", def_pixel_loss, help_message="像素丢失可能有助于增强细节和稳定面部颜色。只有在质量不随时间改善的情况下才能使用它，训练降不下去试试。")
         else:
             self.options['pixel_loss'] = self.options.get('pixel_loss', False)
 
@@ -127,7 +127,7 @@ class Model(ModelBase):
     #override
     def get_ConverterConfig(self):
         import converters
-        return self.predictor_func, (128,128,3), converters.ConverterConfigMasked(face_type=FaceType.FULL, default_mode=4)
+        return self.predictor_func, (128,128,3), converters.ConverterConfigMasked(face_type=FaceType.FULL, default_mode='seamless')
 
     def Build(self, input_layer):
         exec(nnlib.code_import_all, locals(), globals())

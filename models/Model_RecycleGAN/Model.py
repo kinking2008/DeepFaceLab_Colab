@@ -1,4 +1,4 @@
-from functools import partial
+﻿from functools import partial
 
 import cv2
 import numpy as np
@@ -21,7 +21,7 @@ class RecycleGANModel(ModelBase):
     #override
     def onInitializeOptions(self, is_first_run, ask_override):
         if is_first_run:
-            self.options['resolution'] = io.input_int("Resolution ( 128,256 ?:help skip:128) : ", 128, [128,256], help_message="More resolution requires more VRAM and time to train. Value will be adjusted to multiple of 16.")
+            self.options['resolution'] = io.input_int("分辨率 ( 128，256 帮助:? 跳过:128) : ", 128, [128,256], help_message="更高的分辨率需要更多的VRAM和训练时间。 数值调整成16的倍数。")
         else:
             self.options['resolution'] = self.options.get('resolution', 128)
     
@@ -38,7 +38,7 @@ class RecycleGANModel(ModelBase):
         lambda_A = 10
         lambda_B = 10
 
-        use_batch_norm = True #created_batch_size > 1
+        use_batch_norm = False #created_batch_size > 1
         self.GA = modelify(RecycleGANModel.ResNet (bgr_shape[2], use_batch_norm, n_blocks=6, ngf=ngf, use_dropout=True))(Input(bgr_shape))
         self.GB = modelify(RecycleGANModel.ResNet (bgr_shape[2], use_batch_norm, n_blocks=6, ngf=ngf, use_dropout=True))(Input(bgr_shape))
 
@@ -87,12 +87,22 @@ class RecycleGANModel(ModelBase):
         def RecycleLOSS(t1,t2):
             return K.mean(K.abs(t1 - t2))
             
+        def xor_list(lst1, lst2):
+            return  [value for value in lst1+lst2 if (value not in lst1) or (value not in lst2)  ]
+
+
+        fake_GA_updates = self.GA._updates.copy()       
         fake_B0 = self.GA(real_A0)
         fake_B1 = self.GA(real_A1)
+        fake_GA_updates = xor_list (fake_GA_updates, self.GA._updates )
         
+        fake_GB_updates = self.GB._updates.copy()       
         fake_A0 = self.GB(real_B0)      
         fake_A1 = self.GB(real_B1)
+        fake_GB_updates = xor_list (fake_GB_updates, self.GB._updates )
         
+        
+        DA_updates = self.DA._updates.copy()
         real_A0_d = self.DA(real_A0)
         real_A0_d_ones = K.ones_like(real_A0_d)
         real_A1_d = self.DA(real_A1)
@@ -105,7 +115,10 @@ class RecycleGANModel(ModelBase):
         fake_A1_d = self.DA(fake_A1)
         fake_A1_d_ones = K.ones_like(fake_A1_d)
         fake_A1_d_zeros = K.zeros_like(fake_A1_d)
+        DA_updates = xor_list (DA_updates, self.DA._updates )
         
+        
+        DB_updates = self.DB._updates.copy()
         real_B0_d = self.DB(real_B0)
         real_B0_d_ones = K.ones_like(real_B0_d)
         
@@ -119,12 +132,20 @@ class RecycleGANModel(ModelBase):
         fake_B1_d = self.DB(fake_B1)
         fake_B1_d_ones = K.ones_like(fake_B1_d)
         fake_B1_d_zeros = K.zeros_like(fake_B1_d)
+        DB_updates = xor_list (DB_updates, self.DB._updates )
 
+        PA_updates = self.PA._updates.copy()
+        PB_updates = self.PB._updates.copy()
+        GA_updates = self.GA._updates.copy()       
+        GB_updates = self.GB._updates.copy()       
         pred_A2 = self.PA ( [real_A0, real_A1])
         pred_B2 = self.PB ( [real_B0, real_B1])
         rec_A2 = self.GB ( self.PB ( [fake_B0, fake_B1]) )
         rec_B2 = self.GA ( self.PA ( [fake_A0, fake_A1]))
-
+        PA_updates = xor_list (PA_updates, self.PA._updates )
+        PB_updates = xor_list (PB_updates, self.PB._updates )
+        GA_updates = xor_list (GA_updates, self.GA._updates )
+        GB_updates = xor_list (GB_updates, self.GB._updates )
                     
         loss_GA = DLoss(fake_B0_d_ones, fake_B0_d ) + \
                   DLoss(fake_B1_d_ones, fake_B1_d ) + \
@@ -141,14 +162,13 @@ class RecycleGANModel(ModelBase):
                               
         weights_GB = self.GB.trainable_weights + self.PB.trainable_weights
         
-        def opt():
-            return Adam(lr=2e-4, beta_1=0.5, beta_2=0.999, tf_cpu_mode=2)#, clipnorm=1)
+        opt = Adam(lr=2e-4, beta_1=0.5, beta_2=0.999)#, tf_cpu_mode=2)#, clipnorm=1)
         
         self.GA_train = K.function ([real_A0, real_A1, real_A2, real_B0, real_B1, real_B2],[loss_GA],
-                                    opt().get_updates(loss_GA, weights_GA) )
+                                    opt.get_updates(loss_GA, weights_GA) )
                                     
         self.GB_train = K.function ([real_A0, real_A1, real_A2, real_B0, real_B1, real_B2],[loss_GB],
-                                    opt().get_updates(loss_GB, weights_GB) )
+                                    opt.get_updates(loss_GB, weights_GB) )
                                     
         ###########        
         
@@ -161,7 +181,7 @@ class RecycleGANModel(ModelBase):
         loss_D_A = loss_D_A0 + loss_D_A1
         
         self.DA_train = K.function ([real_A0, real_A1, real_A2, real_B0, real_B1, real_B2],[loss_D_A],
-                                    opt().get_updates(loss_D_A, self.DA.trainable_weights) )
+                                    opt.get_updates(loss_D_A, self.DA.trainable_weights) )
         
         ############
         
@@ -174,7 +194,7 @@ class RecycleGANModel(ModelBase):
         loss_D_B = loss_D_B0 + loss_D_B1
         
         self.DB_train = K.function ([real_A0, real_A1, real_A2, real_B0, real_B1, real_B2],[loss_D_B],
-                                    opt().get_updates(loss_D_B, self.DB.trainable_weights) )
+                                    opt.get_updates(loss_D_B, self.DB.trainable_weights) )
         
         ############
         
@@ -185,7 +205,7 @@ class RecycleGANModel(ModelBase):
         
         if self.is_training_mode:
             t = SampleProcessor.Types
-            output_sample_types=[ { 'types': (t.IMG_SOURCE, t.MODE_BGR), 'resolution':resolution, 'normalize_tanh' : True} ]
+            output_sample_types=[ { 'types': (t.IMG_SOURCE, t.FACE_TYPE_FULL, t.MODE_BGR), 'resolution':resolution, 'normalize_tanh' : True} ]
                                   
             self.set_training_data_generators ([            
                     SampleGeneratorImageTemporal(self.training_data_src_path, debug=self.is_debug(), batch_size=self.batch_size, 
@@ -378,7 +398,6 @@ class RecycleGANModel(ModelBase):
 
             return x
         return func
-    nnlib.UNet = UNet
 
     @staticmethod
     def UNetTemporalPredictor(output_nc, use_batch_norm, ngf=64, use_dropout=False):
@@ -387,7 +406,7 @@ class RecycleGANModel(ModelBase):
             past_2_image_tensor, past_1_image_tensor = inputs
 
             x = Concatenate(axis=-1)([ past_2_image_tensor, past_1_image_tensor ])
-            x = UNet(3, use_batch_norm, ngf=ngf, use_dropout=use_dropout) (x)
+            x = RecycleGANModel.UNet(3, use_batch_norm, ngf=ngf, use_dropout=use_dropout) (x)
 
             return x
 
@@ -397,12 +416,12 @@ class RecycleGANModel(ModelBase):
     def PatchDiscriminator(ndf=64):
         exec (nnlib.import_all(), locals(), globals())
 
-        #use_bias = True
-        #def XNormalization(x):
-        #    return InstanceNormalization (axis=-1)(x)
-        use_bias = False
+        use_bias = True
         def XNormalization(x):
-            return BatchNormalization (axis=-1)(x)
+            return InstanceNormalization (axis=-1)(x)
+        #use_bias = False
+        #def XNormalization(x):
+        #    return BatchNormalization (axis=-1)(x)
                 
         XConv2D = partial(Conv2D, use_bias=use_bias)
  

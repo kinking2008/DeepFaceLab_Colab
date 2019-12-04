@@ -1,4 +1,4 @@
-from functools import partial
+﻿from functools import partial
 
 import numpy as np
 
@@ -23,31 +23,31 @@ class SAEModel(ModelBase):
         
 
         if is_first_run:
-            resolution = io.input_int("Resolution ( 64-256 ?:help skip:128) : ", default_resolution, help_message="More resolution requires more VRAM and time to train. Value will be adjusted to multiple of 16.")
-            resolution = np.clip (resolution, 64, 256)
+            resolution = io.input_int("分辨率 ( 64-1024 帮助:? 跳过:128) : ", default_resolution, help_message="更高的分辨率需要更多的VRAM和训练时间。 数值调整成16的倍数。")
+            resolution = np.clip (resolution, 64, 1024)
             while np.modf(resolution / 16)[0] != 0.0:
                 resolution -= 1
             self.options['resolution'] = resolution
 
-            self.options['face_type'] = io.input_str ("Half or Full face? (h/f, ?:help skip:f) : ", default_face_type, ['h','f'], help_message="Half face has better resolution, but covers less area of cheeks.").lower()
+            self.options['face_type'] = io.input_str ("半脸（h）全脸（f）? (帮助:? 跳过:f) : ", default_face_type, ['h','f'], help_message="半脸有更好的分辨率，但覆盖的脸颊面积较小。").lower()
         else:
             self.options['resolution'] = self.options.get('resolution', default_resolution)
             self.options['face_type'] = self.options.get('face_type', default_face_type)
             
         default_learn_mask = self.options.get('learn_mask', True)
         if is_first_run or ask_override:
-            self.options['learn_mask'] = io.input_bool ( f"Learn mask? (y/n, ?:help skip:{yn_str[default_learn_mask]} ) : " , default_learn_mask, help_message="Learning mask can help model to recognize face directions. Learn without mask can reduce model size, in this case converter forced to use 'not predicted mask' that is not smooth as predicted. Model with style values can be learned without mask and produce same quality result.")
+            self.options['learn_mask'] = io.input_bool ( f"学习面具? (y/n, 帮助:? 跳过:{yn_str[default_learn_mask]} ) : " , default_learn_mask, help_message="学习面具可以帮助模型识别面部方向。不使用学习面具可以减少模型大小，在这种情况下，转换器被迫使用不像预测的那样平滑的“未预测的掩模”。具有样式值的模型可以在没有蒙版的情况下学习并产生相同质量的结果。")
         else:
             self.options['learn_mask'] = self.options.get('learn_mask', default_learn_mask)
 
         if (is_first_run or ask_override) and 'tensorflow' in self.device_config.backend:
             def_optimizer_mode = self.options.get('optimizer_mode', 1)
-            self.options['optimizer_mode'] = io.input_int ("Optimizer mode? ( 1,2,3 ?:help skip:%d) : " % (def_optimizer_mode), def_optimizer_mode, help_message="1 - no changes. 2 - allows you to train x2 bigger network consuming RAM. 3 - allows you to train x3 bigger network consuming huge amount of RAM and slower, depends on CPU power.")
+            self.options['optimizer_mode'] = io.input_int ("优化模式? ( 1,2,3 帮助:? 跳过:%d) : " % (def_optimizer_mode), def_optimizer_mode, help_message="1 - 没有变化。2 - 允许您训练x2更大的网络消耗内存。3 - 允许你训练x3更大的网络消耗大量的内存和更慢，取决于CPU的功率。")
         else:
             self.options['optimizer_mode'] = self.options.get('optimizer_mode', 1)
 
         if is_first_run:
-            self.options['archi'] = io.input_str ("AE architecture (df, liae ?:help skip:%s) : " % (default_archi) , default_archi, ['df','liae'], help_message="'df' keeps faces more natural. 'liae' can fix overly different face shapes.").lower() #-s version is slower, but has decreased change to collapse.
+            self.options['archi'] = io.input_str ("AE架构 (df, liae 帮助:? 跳过:%s) : " % (default_archi) , default_archi, ['df','liae'], help_message="'df'让面孔更自然。'liae'可以修复过于不同的脸型。").lower() #-s version is slower, but has decreased change to collapse.
         else:
             self.options['archi'] = self.options.get('archi', default_archi)
 
@@ -57,11 +57,11 @@ class SAEModel(ModelBase):
         def_ca_weights = False
 
         if is_first_run:
-            self.options['ae_dims'] = np.clip ( io.input_int("AutoEncoder dims (32-1024 ?:help skip:%d) : " % (default_ae_dims) , default_ae_dims, help_message="All face information will packed to AE dims. If amount of AE dims are not enough, then for example closed eyes will not be recognized. More dims are better, but require more VRAM. You can fine-tune model size to fit your GPU." ), 32, 1024 )
-            self.options['e_ch_dims'] = np.clip ( io.input_int("Encoder dims per channel (21-85 ?:help skip:%d) : " % (default_e_ch_dims) , default_e_ch_dims, help_message="More encoder dims help to recognize more facial features, but require more VRAM. You can fine-tune model size to fit your GPU." ), 21, 85 )
+            self.options['ae_dims'] = np.clip ( io.input_int("AutoEncoder变暗 (32-1024 帮助:? 跳过:%d) : " % (default_ae_dims) , default_ae_dims, help_message="所有面部信息都将打包到AE暗淡。如果AE暗淡的数量不够，那么例如闭合的眼睛将无法识别。更多的暗淡更好，但需要更多的VRAM。您可以微调模型大小以适合您的GPU。" ), 32, 1024 )
+            self.options['e_ch_dims'] = np.clip ( io.input_int("每个通道的编码器变暗 (21-85 帮助:? 跳过:%d) : " % (default_e_ch_dims) , default_e_ch_dims, help_message="更多编码器变暗有助于识别更多面部特征，但需要更多VRAM。您可以微调模型尺寸以适合您的GPU。" ), 21, 85 )
             default_d_ch_dims = self.options['e_ch_dims'] // 2
-            self.options['d_ch_dims'] = np.clip ( io.input_int("Decoder dims per channel (10-85 ?:help skip:%d) : " % (default_d_ch_dims) , default_d_ch_dims, help_message="More decoder dims help to get better details, but require more VRAM. You can fine-tune model size to fit your GPU." ), 10, 85 )
-            self.options['ca_weights'] = io.input_bool (f"Use CA weights? (y/n, ?:help skip:{yn_str[def_ca_weights]} ) : ", def_ca_weights, help_message="Initialize network with 'Convolution Aware' weights. This may help to achieve a higher accuracy model, but consumes a time at first run.")
+            self.options['d_ch_dims'] = np.clip ( io.input_int("每个通道的解码器变暗 (10-85 帮助:? 跳过:%d) : " % (default_d_ch_dims) , default_d_ch_dims, help_message="更多解码器变暗有助于获得更好的细节，但需要更多VRAM。您可以微调模型大小以适应您的GPU。" ), 10, 85 )
+            self.options['ca_weights'] = io.input_bool (f"使用CA权重? (y/n, 帮助:? 跳过:{yn_str[def_ca_weights]} ) : ", def_ca_weights, help_message="使用“Convolution Aware”权重初始化网络。这可能有助于实现更高精度的模型，但在首次运行时会消耗时间。")
         else:
             self.options['ae_dims'] = self.options.get('ae_dims', default_ae_dims)
             self.options['e_ch_dims'] = self.options.get('e_ch_dims', default_e_ch_dims)
@@ -72,22 +72,22 @@ class SAEModel(ModelBase):
         default_bg_style_power = 0.0
         if is_first_run or ask_override:
             def_pixel_loss = self.options.get('pixel_loss', False)
-            self.options['pixel_loss'] = io.input_bool (f"Use pixel loss? (y/n, ?:help skip:{yn_str[def_pixel_loss]} ) : ", def_pixel_loss, help_message="Pixel loss may help to enhance fine details and stabilize face color. Use it only if quality does not improve over time. Enabling this option too early increases the chance of model collapse.")
+            self.options['pixel_loss'] = io.input_bool (f"使用像素丢失? (y/n, 帮助:? 跳过:{yn_str[def_pixel_loss]} ) : ", def_pixel_loss, help_message="像素丢失可能有助于增强细节和稳定面部颜色。只有在质量不随时间改善的情况下使用它。过早启用此选项会增加模型崩溃的可能性。")
 
             default_face_style_power = default_face_style_power if is_first_run else self.options.get('face_style_power', default_face_style_power)
-            self.options['face_style_power'] = np.clip ( io.input_number("Face style power ( 0.0 .. 100.0 ?:help skip:%.2f) : " % (default_face_style_power), default_face_style_power,
-                                                                               help_message="Learn to transfer face style details such as light and color conditions. Warning: Enable it only after 10k iters, when predicted face is clear enough to start learn style. Start from 0.1 value and check history changes. Enabling this option increases the chance of model collapse."), 0.0, 100.0 )
+            self.options['face_style_power'] = np.clip ( io.input_number("面部风格样式 ( 0.0 .. 100.0 帮助:? 跳过:%.2f) : " % (default_face_style_power), default_face_style_power,
+                                                                               help_message="学会转移面部样式细节，例如光线和颜色条件。警告：只有在10k iters之后启用它，当预测的面部足够清晰以开始学习风格时。从0.1值开始并检查历史记录更改。启用此选项会增加 模特崩溃。"), 0.0, 100.0 )
 
             default_bg_style_power = default_bg_style_power if is_first_run else self.options.get('bg_style_power', default_bg_style_power)
-            self.options['bg_style_power'] = np.clip ( io.input_number("Background style power ( 0.0 .. 100.0 ?:help skip:%.2f) : " % (default_bg_style_power), default_bg_style_power,
-                                                                               help_message="Learn to transfer image around face. This can make face more like dst. Enabling this option increases the chance of model collapse."), 0.0, 100.0 )
+            self.options['bg_style_power'] = np.clip ( io.input_number("背景风格样式( 0.0 .. 100.0 帮助:? 跳过:%.2f) : " % (default_bg_style_power), default_bg_style_power,
+                                                                               help_message="学会围绕脸部传递图像。这可以让脸部更像dst。启用此选项会增加模型崩溃的机会。"), 0.0, 100.0 )
 
             default_ct_mode = self.options.get('ct_mode', 'none')
-            self.options['ct_mode'] = io.input_str (f"Color transfer mode apply to src faceset. ( none/rct/lct/mkl/idt, ?:help skip:{default_ct_mode}) : ", default_ct_mode, ['none','rct','lct','mkl','idt'], help_message="Change color distribution of src samples close to dst samples. Try all modes to find the best.")
+            self.options['ct_mode'] = io.input_str (f"选择颜色转换模式应用于src脸部设置. ( none/rct/lct/mkl/idt/sot, 帮助:? 跳过:{default_ct_mode}) : ", default_ct_mode, ['none','rct','lct','mkl','idt','sot'], help_message="更改drc样本附近的src样本的颜色分布。尝试所有模式以找到最佳的颜色。")
             
             if nnlib.device.backend != 'plaidML': # todo https://github.com/plaidml/plaidml/issues/301
                 default_clipgrad = False if is_first_run else self.options.get('clipgrad', False)
-                self.options['clipgrad'] = io.input_bool (f"Enable gradient clipping? (y/n, ?:help skip:{yn_str[default_clipgrad]}) : ", default_clipgrad, help_message="Gradient clipping reduces chance of model collapse, sacrificing speed of training.")
+                self.options['clipgrad'] = io.input_bool (f"启用渐变剪辑? (y/n, 帮助:? 跳过:{yn_str[default_clipgrad]}) : ", default_clipgrad, help_message="渐变裁剪减少了模型崩溃的可能性，牺牲了训练速度.")
             else:
                 self.options['clipgrad'] = False
 
@@ -99,7 +99,7 @@ class SAEModel(ModelBase):
             self.options['clipgrad'] = self.options.get('clipgrad', False)
 
         if is_first_run:
-            self.options['pretrain'] = io.input_bool ("Pretrain the model? (y/n, ?:help skip:n) : ", False, help_message="Pretrain the model with large amount of various faces. This technique may help to train the fake with overly different face shapes and light conditions of src/dst data. Face will be look more like a morphed. To reduce the morph effect, some model files will be initialized but not be updated after pretrain: LIAE: inter_AB.h5 DF: encoder.h5. The longer you pretrain the model the more morphed face will look. After that, save and run the training again.")
+            self.options['pretrain'] = io.input_bool ("预训练? (y/n, 帮助:? 跳过:n) : ", False, help_message="通过加载pretrain_CelebA目录下人脸进行预训练。这种技术可能有助于训练具有过度不同的面部形状和src / dst数据的光照条件的伪造生成。用这种方式脸部看起来会有些变形，为了减少这种变形效果，一些模型文件将被初始化但在预训练后不会更新：LIAE：inter_AB.h5 DF：encoder.h5。预训练模型的时间越长，变形的脸就会越多。 然后，保存并再次运行模型就会进入常规模式。")
         else:
             self.options['pretrain'] = False
 
@@ -564,7 +564,7 @@ class SAEModel(ModelBase):
 
         import converters
         return self.predictor_func, (self.options['resolution'], self.options['resolution'], 3), converters.ConverterConfigMasked(face_type=face_type,
-                                     default_mode = 1 if self.options['ct_mode'] != 'none' or self.options['face_style_power'] or self.options['bg_style_power'] else 4,
+                                     default_mode = 'overlay' if self.options['ct_mode'] != 'none' or self.options['face_style_power'] or self.options['bg_style_power'] else 'seamless',
                                      clip_hborder_mask_per=0.0625 if (self.options['face_type'] == 'f') else 0,
                                     )
 

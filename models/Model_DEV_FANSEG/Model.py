@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 
 from nnlib import nnlib, TernausNet
 from models import ModelBase
@@ -21,7 +21,7 @@ class Model(ModelBase):
     def onInitializeOptions(self, is_first_run, ask_override):            
         default_face_type = 'f'
         if is_first_run:
-            self.options['face_type'] = io.input_str ("Half or Full face? (h/f, ?:help skip:f) : ", default_face_type, ['h','f'], help_message="").lower()
+            self.options['face_type'] = io.input_str ("半脸（h）全脸（f）? (帮助:? 跳过:f) : ", default_face_type, ['h','f'], help_message="").lower()
         else:
             self.options['face_type'] = self.options.get('face_type', default_face_type)
      
@@ -34,7 +34,6 @@ class Model(ModelBase):
         self.face_type = FaceType.FULL if self.options['face_type'] == 'f' else FaceType.HALF
 
         model_name = 'FANSeg'
-        model_name = 'FANCHQ'
         self.fan_seg = TernausNet(model_name, self.resolution, 
                                             FaceType.toString(self.face_type), 
                                             load_weights=not self.is_first_run(),

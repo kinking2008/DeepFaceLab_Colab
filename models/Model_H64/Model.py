@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 
 from nnlib import nnlib
 from models import ModelBase
@@ -11,7 +11,7 @@ class Model(ModelBase):
     #override
     def onInitializeOptions(self, is_first_run, ask_override):
         if is_first_run:
-            self.options['lighter_ae'] = io.input_bool ("Use lightweight autoencoder? (y/n, ?:help skip:n) : ", False, help_message="Lightweight autoencoder is faster, requires less VRAM, sacrificing overall quality. If your GPU VRAM <= 4, you should to choose this option.")
+            self.options['lighter_ae'] = io.input_bool ("使用轻量级自动编码器? (y/n, 帮助:？ 跳过:n) : ", False, help_message="轻量级自动编码器速度更快，需要的显存更少，牺牲了整体质量。如果您的显存小于或等于4G，建议选择此选项。")
         else:
             default_lighter_ae = self.options.get('created_vram_gb', 99) <= 4 #temporally support old models, deprecate in future
             if 'created_vram_gb' in self.options.keys():
@@ -20,7 +20,7 @@ class Model(ModelBase):
 
         if is_first_run or ask_override:
             def_pixel_loss = self.options.get('pixel_loss', False)
-            self.options['pixel_loss'] = io.input_bool ("Use pixel loss? (y/n, ?:help skip: n/default ) : ", def_pixel_loss, help_message="Pixel loss may help to enhance fine details and stabilize face color. Use it only if quality does not improve over time.")
+            self.options['pixel_loss'] = io.input_bool ("使用像素丢失? (y/n, 帮助:? 跳过: 默认/n  ) : ", def_pixel_loss, help_message="像素丢失可能有助于增强细节和稳定面部颜色。只有在质量不随时间改善的情况下才能使用它，训练降不下去试试。")
         else:
             self.options['pixel_loss'] = self.options.get('pixel_loss', False)
 
@@ -130,7 +130,7 @@ class Model(ModelBase):
     #override
     def get_ConverterConfig(self):
         import converters
-        return self.predictor_func, (64,64,3), converters.ConverterConfigMasked(face_type=FaceType.HALF, default_mode=4)
+        return self.predictor_func, (64,64,3), converters.ConverterConfigMasked(face_type=FaceType.HALF, default_mode='seamless')
 
     def Build(self, lighter_ae):
         exec(nnlib.code_import_all, locals(), globals())

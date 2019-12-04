@@ -1,4 +1,4 @@
-from functools import partial
+﻿from functools import partial
 
 import cv2
 import numpy as np
@@ -23,8 +23,8 @@ class AVATARModel(ModelBase):
     #override
     def onInitializeOptions(self, is_first_run, ask_override):
         if is_first_run:
-            avatar_type = io.input_int("Avatar type ( 0:source, 1:head, 2:full_face ?:help skip:1) : ", 1, [0,1,2],
-                                       help_message="Training target for the model. Source is direct untouched images. Full_face or head are centered nose unaligned faces.")
+            avatar_type = io.input_int("头部类型 ( 0:来源, 1:头, 2:全脸 帮助:? 跳过:1) : ", 1, [0,1,2],
+                                       help_message="模型的训练目标。来源是直接未触动的图像。全面或头部是中心鼻子未对齐的面部。")
             avatar_type = {0:'source',
                            1:'head',
                            2:'full_face'}[avatar_type]
@@ -35,7 +35,7 @@ class AVATARModel(ModelBase):
 
         if is_first_run or ask_override:
             def_stage = self.options.get('stage', 1)
-            self.options['stage'] = io.input_int("Stage (0, 1, 2 ?:help skip:%d) : " % def_stage, def_stage, [0,1,2], help_message="Train first stage, then second. Tune batch size to maximum possible for both stages.")
+            self.options['stage'] = io.input_int("阶段 (0, 1, 2 帮助:? 跳过:%d) : " % def_stage, def_stage, [0,1,2], help_message="训练第一阶段，然后第二阶段。将两个阶段的批量大小调整到最大。")
         else:
             self.options['stage'] = self.options.get('stage', 1)
 
