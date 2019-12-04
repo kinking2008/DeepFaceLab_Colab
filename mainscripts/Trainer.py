@@ -79,7 +79,7 @@ def trainerThread (s2c, c2s, e, args, device_args):
                 else:
                     io.log_info('开始。 目标迭代： %d. 15分钟自动保存一次' % ( model.get_target_iter()  ) )
             else:
-                io.log_info('开始。 按“Enter”键停止训练并保存模型。按“P”预览下一张')
+                io.log_info('开始。 15分钟自动保存一次')
 
             last_save_time = time.time()
 
