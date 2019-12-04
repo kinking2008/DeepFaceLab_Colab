@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import copy
 
 from facelib import FaceType
@@ -45,20 +45,20 @@ class ConverterConfig(object):
 
     #overridable
     def ask_settings(self):
-        s = """Choose sharpen mode: \n"""
+        s = """选择锐化模式: \n"""
         for key in self.sharpen_dict.keys():
             s += f"""({key}) {self.sharpen_dict[key]}\n"""
-        s += f"""?:help Default: {list(self.sharpen_dict.keys())[0]} : """
-        self.sharpen_mode = io.input_int (s, 0, valid_list=self.sharpen_dict.keys(), help_message="Enhance details by applying sharpen filter.")
+        s += f"""帮助:? 默认: {list(self.sharpen_dict.keys())[0]} : """
+        self.sharpen_mode = io.input_int (s, 0, valid_list=self.sharpen_dict.keys(), help_message="通过应用锐化滤镜来增强细节。")
 
         if self.sharpen_mode != 0:
-            self.blursharpen_amount = np.clip ( io.input_int ("Choose blur/sharpen amount [-100..100] (skip:0) : ", 0), -100, 100 )
+            self.blursharpen_amount = np.clip ( io.input_int ("选择模糊/锐化量 [-100..100] (跳过:0) : ", 0), -100, 100 )
 
-        s = """Choose super resolution mode: \n"""
+        s = """选择超级分辨率模式: \n"""
         for key in self.super_res_dict.keys():
             s += f"""({key}) {self.super_res_dict[key]}\n"""
-        s += f"""?:help Default: {list(self.super_res_dict.keys())[0]} : """
-        self.super_resolution_mode = io.input_int (s, 0, valid_list=self.super_res_dict.keys(), help_message="Enhance details by applying superresolution network.")
+        s += f"""帮助:? 默认: {list(self.super_res_dict.keys())[0]} : """
+        self.super_resolution_mode = io.input_int (s, 0, valid_list=self.super_res_dict.keys(), help_message="通过应用超分辨率网络来增强细节。")
 
     def toggle_sharpen_mode(self):
         a = list( self.sharpen_dict.keys() )
@@ -95,21 +95,25 @@ class ConverterConfig(object):
     #overridable
     def to_string(self, filename):
         r = ""
-        r += f"sharpen_mode : {self.sharpen_dict[self.sharpen_mode]}\n"
-        r += f"blursharpen_amount : {self.blursharpen_amount}\n"
-        r += f"super_resolution_mode : {self.super_res_dict[self.super_resolution_mode]}\n"
+        r += f"锐化模式 : {self.sharpen_dict[self.sharpen_mode]}\n"
+        r += f"锐化力度 [-100..100] : {self.blursharpen_amount}\n"
+        r += f"超级分辨率模式 : {self.super_res_dict[self.super_resolution_mode]}\n"
         return r
 
 mode_dict = {0:'original',
              1:'overlay',
              2:'hist-match',
-             3:'seamless2',
-             4:'seamless',
-             5:'seamless-hist-match',
-             6:'raw-rgb',
-             7:'raw-rgb-mask',
-             8:'raw-mask-only',
-             9:'raw-predicted-only'}
+             3:'seamless',
+             4:'seamless-hist-match',
+             5:'raw-rgb',
+             6:'raw-rgb-mask',
+             7:'raw-mask-only',
+             8:'raw-predicted-only'}
+
+mode_str_dict = {}
+
+for key in mode_dict.keys():
+    mode_str_dict[ mode_dict[key] ] = key
 
 full_face_mask_mode_dict = {1:'learned',
                                     2:'dst',
@@ -123,24 +127,24 @@ half_face_mask_mode_dict = {1:'learned',
                                     4:'FAN-dst',
                                     7:'learned*FAN-dst'}
 
-ctm_dict = { 0: "None", 1:"rct", 2:"lct", 3:"mkl", 4:"mkl-m", 5:"idt", 6:"idt-m" }
-ctm_str_dict = {None:0, "rct":1, "lct":2, "mkl":3, "mkl-m":4, "idt":5, "idt-m":6 }
+ctm_dict = { 0: "None", 1:"rct", 2:"lct", 3:"mkl", 4:"mkl-m", 5:"idt", 6:"idt-m", 7:"sot-m", 8:"mix-m" }
+ctm_str_dict = {None:0, "rct":1, "lct":2, "mkl":3, "mkl-m":4, "idt":5, "idt-m":6, "sot-m":7, "mix-m":8 }
 
 class ConverterConfigMasked(ConverterConfig):
 
     def __init__(self, face_type=FaceType.FULL,
-                       default_mode = 4,
+                       default_mode = 'overlay',
                        clip_hborder_mask_per = 0,
 
                        mode='overlay',
                        masked_hist_match=True,
                        hist_match_threshold = 238,
                        mask_mode = 1,
-                       erode_mask_modifier = 0,
-                       blur_mask_modifier = 0,
+                       erode_mask_modifier = 50,
+                       blur_mask_modifier = 50,
                        motion_blur_power = 0,
                        output_face_scale = 0,
-                       color_transfer_mode = 0,
+                       color_transfer_mode = ctm_str_dict['rct'],
                        image_denoise_power = 0,
                        bicubic_degrade_power = 0,
                        color_degrade_power = 0,
@@ -152,7 +156,7 @@ class ConverterConfigMasked(ConverterConfig):
 
         self.face_type = face_type
         if self.face_type not in [FaceType.HALF, FaceType.MID_FULL, FaceType.FULL ]:
-            raise ValueError("ConverterConfigMasked does not support this type of face.")
+            raise ValueError("ConverterConfigMasked不支持这种类型的面孔.")
 
         self.default_mode = default_mode
         self.clip_hborder_mask_per = clip_hborder_mask_per
@@ -176,7 +180,7 @@ class ConverterConfigMasked(ConverterConfig):
         return copy.copy(self)
 
     def set_mode (self, mode):
-        self.mode = mode_dict.get (mode, mode_dict[self.default_mode] )
+        self.mode = mode_dict.get (mode, self.default_mode)
 
     def toggle_masked_hist_match(self):
         if self.mode == 'hist-match' or self.mode == 'hist-match-bw':
@@ -221,55 +225,54 @@ class ConverterConfigMasked(ConverterConfig):
         self.export_mask_alpha = not self.export_mask_alpha
 
     def ask_settings(self):
-
-        s = """Choose mode: \n"""
+        s = """选择模式: \n"""
         for key in mode_dict.keys():
             s += f"""({key}) {mode_dict[key]}\n"""
-        s += f"""Default: {self.default_mode} : """
+        s += f"""默认: { mode_str_dict.get(self.default_mode, 1)  } : """
 
-        mode = io.input_int (s, self.default_mode)
+        mode = io.input_int (s, mode_str_dict.get(self.default_mode, 1) )
 
-        self.mode = mode_dict.get (mode, mode_dict[self.default_mode] )
+        self.mode = mode_dict.get (mode, self.default_mode )
 
         if 'raw' not in self.mode:
             if self.mode == 'hist-match' or self.mode == 'hist-match-bw':
-                self.masked_hist_match = io.input_bool("Masked hist match? (y/n skip:y) : ", True)
+                self.masked_hist_match = io.input_bool("蒙面组合匹配？(y/n 跳过:y):  ", True)
 
             if self.mode == 'hist-match' or self.mode == 'hist-match-bw' or self.mode == 'seamless-hist-match':
-                self.hist_match_threshold = np.clip ( io.input_int("Hist match threshold [0..255] (skip:255) :  ", 255), 0, 255)
+                self.hist_match_threshold = np.clip ( io.input_int("组合匹配阈值[0..255](跳过：255) :  ", 255), 0, 255)
 
         if self.face_type == FaceType.FULL:
-            s = """Choose mask mode: \n"""
+            s = """选择遮罩模式: \n"""
             for key in full_face_mask_mode_dict.keys():
                 s += f"""({key}) {full_face_mask_mode_dict[key]}\n"""
-            s += f"""?:help Default: 1 : """
+            s += f"""帮助:? 默认: 1 : """
 
-            self.mask_mode = io.input_int (s, 1, valid_list=full_face_mask_mode_dict.keys(), help_message="If you learned the mask, then option 1 should be choosed. 'dst' mask is raw shaky mask from dst aligned images. 'FAN-prd' - using super smooth mask by pretrained FAN-model from predicted face. 'FAN-dst' - using super smooth mask by pretrained FAN-model from dst face. 'FAN-prd*FAN-dst' or 'learned*FAN-prd*FAN-dst' - using multiplied masks.")
+            self.mask_mode = io.input_int (s, 1, valid_list=full_face_mask_mode_dict.keys(), help_message="（1）如果你学习面具，那么应该选择选项。（2）'dst'面具是来自dst对齐图像的原始摇晃面具。（3）'FAN-prd' - 使用来自预测面部的预训练FAN模型的超光滑面具。（4）'FAN-dst'  - 使用来自dst face的预训练FAN模型使用超光滑遮罩。（5）'FAN-prd * FAN-dst'或'learned * FAN-prd * FAN-dst' - 使用乘法遮罩。")
         else:
-            s = """Choose mask mode: \n"""
+            s = """选择遮罩模式: \n"""
             for key in half_face_mask_mode_dict.keys():
                 s += f"""({key}) {half_face_mask_mode_dict[key]}\n"""
-            s += f"""?:help , Default: 1 : """
-            self.mask_mode = io.input_int (s, 1, valid_list=half_face_mask_mode_dict.keys(), help_message="If you learned the mask, then option 1 should be choosed. 'dst' mask is raw shaky mask from dst aligned images.")
+            s += f"""帮助:? ,  默认: 1 : """
+            self.mask_mode = io.input_int (s, 1, valid_list=half_face_mask_mode_dict.keys(), help_message="（1）如果你学习面具，那么应该选择选项。（2）'dst'面具是来自dst对齐图像的原始摇晃面具。")
 
         if 'raw' not in self.mode:
-            self.erode_mask_modifier = np.clip ( io.input_int ("Choose erode mask modifier [-400..400] (skip:%d) : " % 0, 0), -400, 400)
-            self.blur_mask_modifier =  np.clip ( io.input_int ("Choose blur mask modifier [-400..400] (skip:%d) : " % 0, 0), -400, 400)
-            self.motion_blur_power = np.clip ( io.input_int ("Choose motion blur power [0..100] (skip:%d) : " % (0), 0), 0, 100)
+            self.erode_mask_modifier = np.clip ( io.input_int ("选择侵蚀面具修改器 [-400..400] (跳过:%d) : " % 0, 0), -400, 400)
+            self.blur_mask_modifier =  np.clip ( io.input_int ("选择模糊遮罩修改器 [-400..400] (跳过:%d) : " % 0, 0), -400, 400)
+            self.motion_blur_power = np.clip ( io.input_int ("选择运动模糊力度 [0..100] (跳过:%d) : " % (0), 0), 0, 100)
 
-        self.output_face_scale = np.clip (io.input_int ("Choose output face scale modifier [-50..50] (skip:0) : ", 0), -50, 50)
+        self.output_face_scale = np.clip (io.input_int ("选择输出面部比例修改器 [-50..50] (跳过:0) : ", 0), -50, 50)
 
         if 'raw' not in self.mode:
-            self.color_transfer_mode = io.input_str ( f"Apply color transfer to predicted face? Choose mode ( {' / '.join ([str(x) for x in list(ctm_str_dict.keys())])} skip:None ) : ", None, ctm_str_dict.keys() )
+            self.color_transfer_mode = io.input_str ( f"将颜色转移应用于预测的脸部吗？ 选择模式 ( {' / '.join ([str(x) for x in list(ctm_str_dict.keys())])} 跳过:None ) : ", None, ctm_str_dict.keys() )
             self.color_transfer_mode = ctm_str_dict[self.color_transfer_mode]
 
         super().ask_settings()
 
         if 'raw' not in self.mode:
-            self.image_denoise_power = np.clip ( io.input_int ("Choose image degrade by denoise power [0..500] (skip:%d) : " % (0), 0), 0, 500)
-            self.bicubic_degrade_power = np.clip ( io.input_int ("Choose image degrade by bicubic rescale power [0..100] (skip:%d) : " % (0), 0), 0, 100)
-            self.color_degrade_power = np.clip (  io.input_int ("Degrade color power of final image [0..100] (skip:0) : ", 0), 0, 100)
-            self.export_mask_alpha = io.input_bool("Export png with alpha channel of the mask? (y/n skip:n) : ", False)
+            self.image_denoise_power = np.clip ( io.input_int ("选择图像降噪强度 [0..500] (跳过:%d) : " % (0), 0), 0, 500)
+            self.bicubic_degrade_power = np.clip ( io.input_int ("选择图像双三次降低功率 [0..100] (跳过:%d) : " % (0), 0), 0, 100)
+            self.color_degrade_power = np.clip (  io.input_int ("降低最终图像的色彩力度 [0..100] (跳过:0) : ", 0), 0, 100)
+            self.export_mask_alpha = io.input_bool("用alpha通道导出png格式图片? (y/n 跳过:n) : ", False)
 
         io.log_info ("")
 
@@ -296,38 +299,38 @@ class ConverterConfigMasked(ConverterConfig):
 
     def to_string(self, filename):
         r = (
-            f"""ConverterConfig {filename}:\n"""
-            f"""Mode: {self.mode}\n"""
+            f"""转换器配置 {filename}:\n"""
+            f"""模式: {self.mode}\n"""
             )
 
         if self.mode == 'hist-match' or self.mode == 'hist-match-bw':
             r += f"""masked_hist_match: {self.masked_hist_match}\n"""
 
         if self.mode == 'hist-match' or self.mode == 'hist-match-bw' or self.mode == 'seamless-hist-match':
-            r += f"""hist_match_threshold: {self.hist_match_threshold}\n"""
+            r += f"""组合匹配阈值 [0..255] : {self.hist_match_threshold}\n"""
 
         if self.face_type == FaceType.FULL:
-            r += f"""mask_mode: { full_face_mask_mode_dict[self.mask_mode] }\n"""
+            r += f"""遮罩模式 : { full_face_mask_mode_dict[self.mask_mode] }\n"""
         else:
-            r += f"""mask_mode: { half_face_mask_mode_dict[self.mask_mode] }\n"""
+            r += f"""遮罩模式 : { half_face_mask_mode_dict[self.mask_mode] }\n"""
 
         if 'raw' not in self.mode:
-            r += (f"""erode_mask_modifier: {self.erode_mask_modifier}\n"""
-                  f"""blur_mask_modifier: {self.blur_mask_modifier}\n"""
-                  f"""motion_blur_power: {self.motion_blur_power}\n""")
+            r += (f"""侵蚀面具修改器 [-400..400] : {self.erode_mask_modifier}\n"""
+                  f"""模糊遮罩修改器 [-400..400] : {self.blur_mask_modifier}\n"""
+                  f"""运动模糊力度 [0..100] : {self.motion_blur_power}\n""")
 
-        r += f"""output_face_scale: {self.output_face_scale}\n"""
+        r += f"""输出面部比例修改器 [-50..50] : {self.output_face_scale}\n"""
 
         if 'raw' not in self.mode:
-            r += f"""color_transfer_mode: { ctm_dict[self.color_transfer_mode]}\n"""
+            r += f"""颜色转移模式 : { ctm_dict[self.color_transfer_mode]}\n"""
 
         r += super().to_string(filename)
 
         if 'raw' not in self.mode:
-            r += (f"""image_denoise_power: {self.image_denoise_power}\n"""
-                  f"""bicubic_degrade_power: {self.bicubic_degrade_power}\n"""
-                  f"""color_degrade_power: {self.color_degrade_power}\n"""
-                  f"""export_mask_alpha: {self.export_mask_alpha}\n""")
+            r += (f"""图像降噪强度: {self.image_denoise_power}\n"""
+                  f"""双三次降低功率: {self.bicubic_degrade_power}\n"""
+                  f"""降低图像色彩力度 : {self.color_degrade_power}\n"""
+                  f"""alpha通道导出png格式图片蒙面 : {self.export_mask_alpha}\n""")
 
         r += "================"
 
@@ -349,7 +352,7 @@ class ConverterConfigFaceAvatar(ConverterConfig):
 
     #override
     def ask_settings(self):
-        self.add_source_image = io.input_bool("Add source image? (y/n ?:help skip:n) : ", False, help_message="Add source image for comparison.")
+        self.add_source_image = io.input_bool("添加源图像? (y/n 帮助:? 跳过:n) : ", False, help_message="添加源图像进行比较。")
         super().ask_settings()
 
     def toggle_add_source_image(self):
@@ -367,7 +370,7 @@ class ConverterConfigFaceAvatar(ConverterConfig):
 
     #override
     def to_string(self, filename):
-        return (f"ConverterConfig {filename}:\n"
-                f"add_source_image : {self.add_source_image}\n") + \
+        return (f"转换设置 {filename}:\n"
+                f"添加源图像 : {self.add_source_image}\n") + \
                 super().to_string(filename) + "================"
 
